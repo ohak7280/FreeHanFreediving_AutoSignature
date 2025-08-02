@@ -581,28 +581,48 @@
             
             if (confirm(`"${consentName}"님의 ${consentDate} 체험 동의서를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
                 try {
-                    // Firebase에서 문서 삭제 시도
+                    console.log('삭제 시작:', consent);
+                    
+                    // 1. Firebase에서 삭제
                     if (db && consent.id) {
-                        await db.collection('consents').doc(consent.id).delete();
-                        console.log('Firebase에서 삭제 완료:', consent.id);
+                        try {
+                            await db.collection('consents').doc(consent.id).delete();
+                            console.log('Firebase에서 삭제 완료:', consent.id);
+                        } catch (firebaseError) {
+                            console.error('Firebase 삭제 실패:', firebaseError);
+                        }
                     }
                     
-                    // 로컬 스토리지에서도 삭제
+                    // 2. 로컬 스토리지에서 삭제
                     try {
                         const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
-                        const updatedData = existingData.filter(item => 
-                            !(item.name === consent.name && 
-                              item.experienceDate === consent.experienceDate && 
-                              item.timestamp === consent.timestamp)
-                        );
+                        console.log('삭제 전 로컬 데이터 개수:', existingData.length);
+                        
+                        // 정확한 매칭으로 삭제
+                        const updatedData = existingData.filter(item => {
+                            const isMatch = item.name === consent.name && 
+                                          item.experienceDate === consent.experienceDate && 
+                                          item.timestamp === consent.timestamp;
+                            if (isMatch) {
+                                console.log('삭제할 항목 발견:', item);
+                            }
+                            return !isMatch;
+                        });
+                        
                         localStorage.setItem('freedivingConsents', JSON.stringify(updatedData));
+                        console.log('삭제 후 로컬 데이터 개수:', updatedData.length);
                         console.log('로컬 스토리지에서 삭제 완료');
                     } catch (localError) {
                         console.error('로컬 스토리지 삭제 실패:', localError);
                     }
                     
-                    // 화면 새로고침
-                    loadAllConsents();
+                    // 3. 배열에서도 삭제
+                    allConsents.splice(index, 1);
+                    console.log('배열에서 삭제 완료, 남은 개수:', allConsents.length);
+                    
+                    // 4. 화면 새로고침
+                    displayConsents(allConsents);
+                    updateStats();
                     
                     alert(`"${consentName}"님의 동의서가 삭제되었습니다.`);
                 } catch (error) {
