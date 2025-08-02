@@ -191,10 +191,27 @@
             font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            margin-right: 8px;
         }
 
         .view-btn:hover {
             background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .delete-btn {
+            padding: 8px 20px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #c82333;
             transform: translateY(-1px);
         }
 
@@ -445,6 +462,7 @@
                             ${statusText}
                         </div>
                         <button onclick="viewConsent(${index})" class="view-btn">상세보기</button>
+                        <button onclick="deleteConsent(${index})" class="delete-btn">삭제</button>
                     </div>
                 `;
             }).join('');
@@ -504,6 +522,26 @@
         // 모달 닫기
         function closeModal() {
             document.getElementById('consentModal').style.display = 'none';
+        }
+
+        // 동의서 삭제
+        function deleteConsent(index) {
+            const consent = allConsents[index];
+            const consentName = consent.name;
+            const consentDate = consent.experienceDate;
+            
+            if (confirm(`"${consentName}"님의 ${consentDate} 체험 동의서를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
+                // 배열에서 해당 항목 제거
+                allConsents.splice(index, 1);
+                
+                // 로컬 스토리지 업데이트
+                localStorage.setItem('freedivingConsents', JSON.stringify(allConsents));
+                
+                // 화면 새로고침
+                loadConsents();
+                
+                alert(`"${consentName}"님의 동의서가 삭제되었습니다.`);
+            }
         }
 
         // 모달 외부 클릭 시 닫기

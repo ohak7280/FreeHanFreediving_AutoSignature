@@ -231,6 +231,11 @@ form.addEventListener('submit', async (e) => {
         return;
     }
     
+    // 제출 버튼 비활성화 (중복 제출 방지)
+    const submitButton = document.getElementById('submitForm');
+    submitButton.disabled = true;
+    submitButton.textContent = '제출 중...';
+    
     // 데이터 수집
     const formData = {
         id: `${document.getElementById('name').value}_${document.getElementById('experience-date').value}_${Date.now()}`,
@@ -251,6 +256,21 @@ form.addEventListener('submit', async (e) => {
     try {
         console.log('동의서 제출 시작:', formData.name);
         
+        // 중복 제출 체크
+        const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+        const isDuplicate = existingData.some(item => 
+            item.name === formData.name && 
+            item.experienceDate === formData.experienceDate &&
+            item.timestamp.split('T')[0] === formData.timestamp.split('T')[0]
+        );
+        
+        if (isDuplicate) {
+            alert('이미 제출된 동의서입니다.');
+            submitButton.disabled = false;
+            submitButton.textContent = '제출';
+            return;
+        }
+        
         // 로컬 스토리지에 저장
         saveToLocalStorage(formData);
         
@@ -265,6 +285,10 @@ form.addEventListener('submit', async (e) => {
     } catch (error) {
         console.error('Error saving data:', error);
         alert('데이터 저장 중 오류가 발생했습니다.');
+    } finally {
+        // 제출 버튼 다시 활성화
+        submitButton.disabled = false;
+        submitButton.textContent = '제출';
     }
 });
 
