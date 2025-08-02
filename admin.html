@@ -215,6 +215,43 @@
             transform: translateY(-1px);
         }
 
+        .bulk-delete-btn {
+            padding: 12px 25px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .bulk-delete-btn:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+
+        .bulk-delete-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+
+        .consent-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
         /* 모달 스타일 */
         .modal {
             display: none;
@@ -373,6 +410,7 @@
                 <input type="date" id="searchDate" class="search-input">
                 <button onclick="searchConsents()" class="search-btn">검색</button>
                 <button onclick="loadAllConsents()" class="search-btn">전체 보기</button>
+                <button onclick="bulkDeleteConsents()" class="bulk-delete-btn" id="bulkDeleteBtn" disabled>선택 삭제</button>
             </div>
         </div>
 
@@ -541,6 +579,9 @@
 
                 return `
                     <div class="consent-item">
+                        <div class="checkbox-container">
+                            <input type="checkbox" class="consent-checkbox" data-index="${index}" onchange="updateBulkDeleteButton()">
+                        </div>
                         <div class="consent-info">
                             <h3>${consent.name}</h3>
                             <p>연락처: ${consent.contact}</p>
@@ -713,6 +754,119 @@
             document.getElementById('totalConsents').textContent = total;
             document.getElementById('todayConsents').textContent = todayCount;
             document.getElementById('monthConsents').textContent = monthCount;
+        }
+
+        // 일괄 삭제 버튼 상태 업데이트
+        function updateBulkDeleteButton() {
+            const checkboxes = document.querySelectorAll('.consent-checkbox:checked');
+            const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+            
+            if (checkboxes.length > 0) {
+                bulkDeleteBtn.disabled = false;
+                bulkDeleteBtn.textContent = `선택 삭제 (${checkboxes.length}개)`;
+            } else {
+                bulkDeleteBtn.disabled = true;
+                bulkDeleteBtn.textContent = '선택 삭제';
+            }
+        }
+
+        // 일괄 삭제 실행
+        async function bulkDeleteConsents() {
+            const checkboxes = document.querySelectorAll('.consent-checkbox:checked');
+            
+            if (checkboxes.length === 0) {
+                alert('삭제할 항목을 선택해주세요.');
+                return;
+            }
+
+            const selectedNames = [];
+            checkboxes.forEach(checkbox => {
+                const index = parseInt(checkbox.getAttribute('data-index'));
+                const consent = allConsents[index];
+                selectedNames.push(consent.name);
+            });
+
+            const confirmMessage = `선택된 ${checkboxes.length}개의 동의서를 삭제하시겠습니까?\n\n선택된 항목:\n${selectedNames.join(', ')}\n\n이 작업은 되돌릴 수 없습니다.`;
+
+            if (confirm(confirmMessage)) {
+                try {
+                    console.log('일괄 삭제 시작:', checkboxes.length, '개');
+
+                    // 선택된 항목들을 인덱스 순으로 정렬 (뒤에서부터 삭제)
+                    const selectedIndexes = Array.from(checkboxes).map(checkbox => 
+                        parseInt(checkbox.getAttribute('data-index'))
+                    ).sort((a, b) => b - a);
+
+                    let deletedCount = 0;
+
+                    for (const index of selectedIndexes) {
+                        const consent = allConsents[index];
+                        
+                        try {
+                            // 1. Firebase에서 삭제
+                            if (db && consent.id) {
+                                try {
+                                    await db.collection('consents').doc(consent.id).delete();
+                                    console.log('Firebase에서 삭제 완료:', consent.id);
+                                } catch (firebaseError) {
+                                    console.error('Firebase 삭제 실패:', firebaseError);
+                                }
+                            }
+
+                            // 2. 로컬 스토리지에서 삭제
+                            try {
+                                const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+                                const updatedData = existingData.filter(item => {
+                                    let isMatch = false;
+                                    
+                                    if (consent.id && item.id) {
+                                        isMatch = item.id === consent.id;
+                                    } else {
+                                        isMatch = item.name === consent.name && 
+                                                 item.experienceDate === consent.experienceDate && 
+                                                 item.timestamp === consent.timestamp;
+                                    }
+                                    return !isMatch;
+                                });
+                                
+                                localStorage.setItem('freedivingConsents', JSON.stringify(updatedData));
+                            } catch (localError) {
+                                console.error('로컬 스토리지 삭제 실패:', localError);
+                            }
+
+                            // 3. 삭제된 항목 추적에 추가
+                            deletedItems.push({
+                                id: consent.id,
+                                name: consent.name,
+                                experienceDate: consent.experienceDate,
+                                timestamp: consent.timestamp
+                            });
+
+                            deletedCount++;
+                        } catch (error) {
+                            console.error('개별 삭제 실패:', error);
+                        }
+                    }
+
+                    // 4. 삭제된 항목 추적 저장
+                    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+
+                    // 5. 배열에서 삭제
+                    for (const index of selectedIndexes) {
+                        allConsents.splice(index, 1);
+                    }
+
+                    // 6. 화면 업데이트
+                    displayConsents(allConsents);
+                    updateStats();
+                    updateBulkDeleteButton();
+
+                    alert(`${deletedCount}개의 동의서가 삭제되었습니다.`);
+                } catch (error) {
+                    console.error('일괄 삭제 실패:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                }
+            }
         }
     </script>
 </body>
