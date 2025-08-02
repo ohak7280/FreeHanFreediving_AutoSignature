@@ -257,6 +257,8 @@ form.addEventListener('submit', async (e) => {
     };
     
     try {
+        console.log('동의서 제출 시작:', formData.name);
+        
         // 먼저 로컬 스토리지에 저장 (이미지 캡처 실패해도 데이터는 보존)
         saveToLocalStorage(formData);
         
@@ -373,9 +375,27 @@ function resetForm() {
 
 // 로컬 스토리지에 저장
 function saveToLocalStorage(data) {
-    const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
-    existingData.push(data);
-    localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
+    try {
+        const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+        
+        // 중복 체크 (같은 ID가 있는지 확인)
+        const existingIndex = existingData.findIndex(item => item.id === data.id);
+        
+        if (existingIndex !== -1) {
+            // 기존 데이터 업데이트 (이미지 캡처 후)
+            existingData[existingIndex] = data;
+        } else {
+            // 새로운 데이터 추가
+            existingData.push(data);
+        }
+        
+        localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
+        console.log('데이터 저장 완료:', data.name, '총 개수:', existingData.length);
+        
+    } catch (error) {
+        console.error('로컬 스토리지 저장 실패:', error);
+        throw error;
+    }
 }
 
 // 페이지 로드 시 초기화
