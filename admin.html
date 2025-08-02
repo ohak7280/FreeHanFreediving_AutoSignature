@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리다이빙 동의서 관리자 페이지</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .admin-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .search-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .search-form {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .search-input {
+            padding: 10px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .search-btn {
+            padding: 10px 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .consent-list {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .consent-item {
+            padding: 20px;
+            border-bottom: 1px solid #e9ecef;
+            display: grid;
+            grid-template-columns: 1fr auto auto auto;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        .consent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .consent-info h3 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        
+        .consent-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+        
+        .consent-date {
+            color: #667eea;
+            font-weight: 500;
+        }
+        
+        .consent-status {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-complete {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .view-btn {
+            padding: 8px 15px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+        
+        .signature-preview {
+            width: 100px;
+            height: 50px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>프리다이빙 동의서 관리자 페이지</h1>
+            <p>체험 참가자 동의서 데이터 관리</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalConsents">0</div>
+                <div>총 동의서</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="todayConsents">0</div>
+                <div>오늘 동의서</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="thisMonth">0</div>
+                <div>이번 달</div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <h2>동의서 검색</h2>
+            <div class="search-form">
+                <input type="text" id="searchName" class="search-input" placeholder="참가자 이름">
+                <input type="date" id="searchDate" class="search-input">
+                <button onclick="searchConsents()" class="search-btn">검색</button>
+                <button onclick="loadAllConsents()" class="search-btn">전체 보기</button>
+            </div>
+        </div>
+
+        <div class="consent-list" id="consentList">
+            <div class="no-data">
+                <h3>동의서가 없습니다</h3>
+                <p>첫 번째 동의서를 작성해보세요!</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 페이지 로드 시 데이터 로드
+        document.addEventListener('DOMContentLoaded', function() {
+            loadAllConsents();
+            updateStats();
+        });
+
+        // 모든 동의서 로드
+        function loadAllConsents() {
+            const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            displayConsents(consents);
+        }
+
+        // 동의서 검색
+        function searchConsents() {
+            const name = document.getElementById('searchName').value.toLowerCase();
+            const date = document.getElementById('searchDate').value;
+            const allConsents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            
+            let filteredConsents = allConsents;
+            
+            if (name) {
+                filteredConsents = filteredConsents.filter(consent => 
+                    consent.name.toLowerCase().includes(name)
+                );
+            }
+            
+            if (date) {
+                filteredConsents = filteredConsents.filter(consent => 
+                    consent.experienceDate === date
+                );
+            }
+            
+            displayConsents(filteredConsents);
+        }
+
+        // 동의서 목록 표시
+        function displayConsents(consents) {
+            const listElement = document.getElementById('consentList');
+            
+            if (consents.length === 0) {
+                listElement.innerHTML = `
+                    <div class="no-data">
+                        <h3>동의서가 없습니다</h3>
+                        <p>검색 조건을 변경해보세요.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            const html = consents.map((consent, index) => `
+                <div class="consent-item">
+                    <div class="consent-info">
+                        <h3>${consent.name}</h3>
+                        <p>연락처: ${consent.contact}</p>
+                        <p>체험일: ${consent.experienceDate}</p>
+                    </div>
+                    <div class="consent-date">
+                        ${new Date(consent.timestamp).toLocaleDateString('ko-KR')}
+                    </div>
+                    <div class="consent-status status-complete">
+                        완료
+                    </div>
+                    <button onclick="viewConsent(${index})" class="view-btn">상세보기</button>
+                </div>
+            `).join('');
+            
+            listElement.innerHTML = html;
+        }
+
+        // 동의서 상세보기
+        function viewConsent(index) {
+            const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            const consent = consents[index];
+            
+            const details = `
+                이름: ${consent.name}
+                연락처: ${consent.contact}
+                체험일: ${consent.experienceDate}
+                작성일: ${new Date(consent.timestamp).toLocaleString('ko-KR')}
+                
+                동의 내용:
+                - 신체접촉 동의: ${consent.consent.physicalContact ? '동의' : '미동의'}
+                - 환불규정 동의: ${consent.consent.refundPolicy ? '동의' : '미동의'}
+                - 안내사항 동의: ${consent.consent.guidance ? '동의' : '미동의'}
+                - 촬영물 동의: ${consent.consent.mediaConsent ? '동의' : '미동의'}
+                - 최종 동의: ${consent.consent.finalConsent ? '동의' : '미동의'}
+            `;
+            
+            alert(details);
+        }
+
+        // 통계 업데이트
+        function updateStats() {
+            const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = new Date().getMonth();
+            const thisYear = new Date().getFullYear();
+            
+            document.getElementById('totalConsents').textContent = consents.length;
+            
+            const todayConsents = consents.filter(consent => 
+                consent.experienceDate === today
+            ).length;
+            document.getElementById('todayConsents').textContent = todayConsents;
+            
+            const thisMonthConsents = consents.filter(consent => {
+                const consentDate = new Date(consent.experienceDate);
+                return consentDate.getMonth() === thisMonth && 
+                       consentDate.getFullYear() === thisYear;
+            }).length;
+            document.getElementById('thisMonth').textContent = thisMonthConsents;
+        }
+
+        // 데이터 내보내기
+        function exportData() {
+            const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            const dataStr = JSON.stringify(consents, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `freediving_consents_${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html> 
