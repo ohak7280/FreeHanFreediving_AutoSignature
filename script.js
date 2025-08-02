@@ -257,6 +257,9 @@ form.addEventListener('submit', async (e) => {
     };
     
     try {
+        // 먼저 로컬 스토리지에 저장 (이미지 캡처 실패해도 데이터는 보존)
+        saveToLocalStorage(formData);
+        
         // 이미지 캡처 및 메일 전송
         await captureAndSendEmail(formData);
         
@@ -301,7 +304,7 @@ async function captureAndSendEmail(formData) {
         // 캡처된 이미지를 formData에 저장
         formData.capturedImage = imageData;
         
-        // 로컬 스토리지에 업데이트된 데이터 저장
+        // 로컬 스토리지에 업데이트된 데이터 저장 (이미지 포함)
         saveToLocalStorage(formData);
         
         // 메일 전송
@@ -310,6 +313,7 @@ async function captureAndSendEmail(formData) {
     } catch (error) {
         console.error('이미지 캡처 실패:', error);
         // 이미지 캡처 실패해도 동의서 제출은 계속 진행
+        // 데이터는 이미 저장되어 있으므로 추가 저장 불필요
     }
 }
 
