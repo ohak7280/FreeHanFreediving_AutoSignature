@@ -391,7 +391,25 @@
         </div>
     </div>
 
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-firestore-compat.js"></script>
+    
     <script>
+        // Firebase 설정
+        const firebaseConfig = {
+            apiKey: "AIzaSyAF2dAPeP5Dz0SetJ_rLIsK7mNpGORBYKY",
+            authDomain: "freediving-consent.firebaseapp.com",
+            projectId: "freediving-consent",
+            storageBucket: "freediving-consent.firebasestorage.app",
+            messagingSenderId: "707792843259",
+            appId: "1:707792843259:web:237ef7284926d73773db5e"
+        };
+
+        // Firebase 초기화
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         let allConsents = [];
 
         // 페이지 로드 시 초기화
@@ -400,11 +418,20 @@
             updateStats();
         });
 
-        // 모든 동의서 로드
-        function loadAllConsents() {
-            allConsents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
-            displayConsents(allConsents);
-            updateStats();
+        // Firebase에서 모든 동의서 로드
+        async function loadAllConsents() {
+            try {
+                const snapshot = await db.collection('consents').orderBy('createdAt', 'desc').get();
+                allConsents = snapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                displayConsents(allConsents);
+                updateStats();
+            } catch (error) {
+                console.error('Firebase 데이터 로드 실패:', error);
+                alert('데이터를 불러오는데 실패했습니다.');
+            }
         }
 
         // 동의서 검색
@@ -525,22 +552,24 @@
         }
 
         // 동의서 삭제
-        function deleteConsent(index) {
+        async function deleteConsent(index) {
             const consent = allConsents[index];
             const consentName = consent.name;
             const consentDate = consent.experienceDate;
             
             if (confirm(`"${consentName}"님의 ${consentDate} 체험 동의서를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
-                // 배열에서 해당 항목 제거
-                allConsents.splice(index, 1);
-                
-                // 로컬 스토리지 업데이트
-                localStorage.setItem('freedivingConsents', JSON.stringify(allConsents));
-                
-                // 화면 새로고침
-                loadAllConsents();
-                
-                alert(`"${consentName}"님의 동의서가 삭제되었습니다.`);
+                try {
+                    // Firebase에서 문서 삭제
+                    await db.collection('consents').doc(consent.id).delete();
+                    
+                    // 화면 새로고침
+                    loadAllConsents();
+                    
+                    alert(`"${consentName}"님의 동의서가 삭제되었습니다.`);
+                } catch (error) {
+                    console.error('삭제 실패:', error);
+                    alert('삭제 중 오류가 발생했습니다.');
+                }
             }
         }
 
