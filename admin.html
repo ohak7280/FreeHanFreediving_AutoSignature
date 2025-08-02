@@ -145,6 +145,74 @@
             border-radius: 5px;
             object-fit: contain;
         }
+        
+        /* 모바일 반응형 디자인 */
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 10px;
+            }
+            
+            .admin-header {
+                padding: 20px;
+                margin-bottom: 20px;
+            }
+            
+            .admin-header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .search-section {
+                padding: 15px;
+                margin-bottom: 20px;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .search-input {
+                width: 100%;
+            }
+            
+            .search-btn {
+                width: 100%;
+                padding: 12px;
+            }
+            
+            .consent-item {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                padding: 15px;
+            }
+            
+            .consent-info h3 {
+                font-size: 1.1rem;
+            }
+            
+            .view-btn {
+                width: 100%;
+                padding: 10px;
+            }
+            
+            /* 데이터 관리 버튼 모바일 최적화 */
+            .data-management-buttons {
+                flex-direction: column !important;
+                gap: 8px !important;
+            }
+            
+            .data-management-buttons button {
+                width: 100% !important;
+                padding: 12px 15px !important;
+                font-size: 0.9rem !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -176,6 +244,19 @@
                 <input type="date" id="searchDate" class="search-input">
                 <button onclick="searchConsents()" class="search-btn">검색</button>
                 <button onclick="loadAllConsents()" class="search-btn">전체 보기</button>
+            </div>
+            
+            <!-- 데이터 관리 버튼 추가 -->
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e9ecef;">
+                <h3 style="color: #667eea; margin-bottom: 10px;">데이터 관리</h3>
+                <div class="data-management-buttons" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button onclick="exportAllData()" class="search-btn" style="background: #17a2b8;">📤 모든 데이터 내보내기</button>
+                    <button onclick="importData()" class="search-btn" style="background: #ffc107; color: #212529;">📥 데이터 가져오기</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+                </div>
+                <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">
+                    💡 모바일에서 작성된 데이터를 가져오려면 "데이터 가져오기"를 사용하세요.
+                </p>
             </div>
         </div>
 
@@ -237,47 +318,149 @@
                 return;
             }
             
-            const html = consents.map((consent, index) => `
-                <div class="consent-item">
-                    <div class="consent-info">
-                        <h3>${consent.name}</h3>
-                        <p>연락처: ${consent.contact}</p>
-                        <p>체험일: ${consent.experienceDate}</p>
-                    </div>
-                    <div class="consent-date">
-                        ${new Date(consent.timestamp).toLocaleDateString('ko-KR')}
-                    </div>
-                    <div class="consent-status status-complete">
-                        완료
-                    </div>
-                    <button onclick="viewConsent(${index})" class="view-btn">상세보기</button>
-                </div>
-            `).join('');
+                         const html = consents.map((consent, index) => {
+                 // 같은 사람, 같은 날짜의 동의서 개수 확인
+                 const samePersonSameDate = consents.filter(c => 
+                     c.name === consent.name && c.experienceDate === consent.experienceDate
+                 ).length;
+                 
+                 const duplicateIndicator = samePersonSameDate > 1 ? 
+                     `<span style="background: #ffc107; color: #856404; padding: 2px 6px; border-radius: 10px; font-size: 0.7rem; margin-left: 5px;">중복</span>` : '';
+                 
+                 return `
+                     <div class="consent-item">
+                         <div class="consent-info">
+                             <h3>${consent.name} ${duplicateIndicator}</h3>
+                             <p>연락처: ${consent.contact}</p>
+                             <p>체험일: ${consent.experienceDate}</p>
+                             <p style="font-size: 0.8rem; color: #999;">작성시간: ${new Date(consent.timestamp).toLocaleTimeString('ko-KR')}</p>
+                         </div>
+                         <div class="consent-date">
+                             ${new Date(consent.timestamp).toLocaleDateString('ko-KR')}
+                         </div>
+                         <div class="consent-status status-complete">
+                             완료
+                         </div>
+                         <button onclick="viewConsent(${index})" class="view-btn">상세보기</button>
+                     </div>
+                 `;
+             }).join('');
             
             listElement.innerHTML = html;
         }
 
-        // 동의서 상세보기
-        function viewConsent(index) {
-            const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
-            const consent = consents[index];
-            
-            const details = `
-                이름: ${consent.name}
-                연락처: ${consent.contact}
-                체험일: ${consent.experienceDate}
-                작성일: ${new Date(consent.timestamp).toLocaleString('ko-KR')}
-                
-                동의 내용:
-                - 신체접촉 동의: ${consent.consent.physicalContact ? '동의' : '미동의'}
-                - 환불규정 동의: ${consent.consent.refundPolicy ? '동의' : '미동의'}
-                - 안내사항 동의: ${consent.consent.guidance ? '동의' : '미동의'}
-                - 촬영물 동의: ${consent.consent.mediaConsent ? '동의' : '미동의'}
-                - 최종 동의: ${consent.consent.finalConsent ? '동의' : '미동의'}
-            `;
-            
-            alert(details);
-        }
+                 // 동의서 상세보기
+         function viewConsent(index) {
+             const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+             const consent = consents[index];
+             
+             // 모달 창 생성
+             const modal = document.createElement('div');
+             modal.style.cssText = `
+                 position: fixed;
+                 top: 0;
+                 left: 0;
+                 width: 100%;
+                 height: 100%;
+                 background: rgba(0,0,0,0.8);
+                 display: flex;
+                 justify-content: center;
+                 align-items: center;
+                 z-index: 1000;
+             `;
+             
+             const modalContent = document.createElement('div');
+             modalContent.style.cssText = `
+                 background: white;
+                 padding: 30px;
+                 border-radius: 15px;
+                 max-width: 600px;
+                 max-height: 80vh;
+                 overflow-y: auto;
+                 position: relative;
+             `;
+             
+             modalContent.innerHTML = `
+                 <button onclick="this.parentElement.parentElement.remove()" style="
+                     position: absolute;
+                     top: 10px;
+                     right: 15px;
+                     background: none;
+                     border: none;
+                     font-size: 24px;
+                     cursor: pointer;
+                     color: #666;
+                 ">&times;</button>
+                 
+                 <h2 style="margin-bottom: 20px; color: #333;">동의서 상세정보</h2>
+                 
+                                   <div style="margin-bottom: 20px;">
+                      <h3 style="color: #667eea; margin-bottom: 10px;">참가자 정보</h3>
+                      <p><strong>고유 ID:</strong> ${consent.id || 'N/A'}</p>
+                      <p><strong>이름:</strong> ${consent.name}</p>
+                      <p><strong>연락처:</strong> ${consent.contact}</p>
+                      <p><strong>체험일:</strong> ${consent.experienceDate}</p>
+                      <p><strong>작성일:</strong> ${new Date(consent.timestamp).toLocaleString('ko-KR')}</p>
+                  </div>
+                 
+                 <div style="margin-bottom: 20px;">
+                     <h3 style="color: #667eea; margin-bottom: 10px;">동의 내용</h3>
+                     <p><strong>신체접촉 동의:</strong> ${consent.consent.physicalContact ? '✅ 동의' : '❌ 미동의'}</p>
+                     <p><strong>환불규정 동의:</strong> ${consent.consent.refundPolicy ? '✅ 동의' : '❌ 미동의'}</p>
+                     <p><strong>안내사항 동의:</strong> ${consent.consent.guidance ? '✅ 동의' : '❌ 미동의'}</p>
+                     <p><strong>촬영물 동의:</strong> ${consent.consent.mediaConsent ? '✅ 동의' : '❌ 미동의'}</p>
+                     <p><strong>최종 동의:</strong> ${consent.consent.finalConsent ? '✅ 동의' : '❌ 미동의'}</p>
+                 </div>
+                 
+                 <div style="margin-bottom: 20px;">
+                     <h3 style="color: #667eea; margin-bottom: 10px;">전자서명</h3>
+                     <img src="${consent.signature}" alt="전자서명" style="
+                         max-width: 100%;
+                         border: 2px solid #e9ecef;
+                         border-radius: 8px;
+                         background: white;
+                     ">
+                 </div>
+                 
+                 <div style="text-align: center; margin-top: 20px;">
+                     <button onclick="downloadConsent(${index})" style="
+                         padding: 10px 20px;
+                         background: #28a745;
+                         color: white;
+                         border: none;
+                         border-radius: 8px;
+                         cursor: pointer;
+                         margin-right: 10px;
+                     ">JSON 다운로드</button>
+                     <button onclick="this.parentElement.parentElement.parentElement.remove()" style="
+                         padding: 10px 20px;
+                         background: #6c757d;
+                         color: white;
+                         border: none;
+                         border-radius: 8px;
+                         cursor: pointer;
+                     ">닫기</button>
+                 </div>
+             `;
+             
+             modal.appendChild(modalContent);
+             document.body.appendChild(modal);
+         }
+         
+         // 개별 동의서 다운로드
+         function downloadConsent(index) {
+             const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+             const consent = consents[index];
+             
+             const dataStr = JSON.stringify(consent, null, 2);
+             const dataBlob = new Blob([dataStr], {type: 'application/json'});
+             const url = URL.createObjectURL(dataBlob);
+             const link = document.createElement('a');
+             link.href = url;
+             link.download = `freediving_consent_${consent.name}_${consent.experienceDate}.json`;
+             link.click();
+             URL.revokeObjectURL(url);
+         }
 
         // 통계 업데이트
         function updateStats() {
@@ -302,7 +485,7 @@
         }
 
         // 데이터 내보내기
-        function exportData() {
+        function exportAllData() {
             const consents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
             const dataStr = JSON.stringify(consents, null, 2);
             const dataBlob = new Blob([dataStr], {type: 'application/json'});
@@ -312,6 +495,37 @@
             link.download = `freediving_consents_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             URL.revokeObjectURL(url);
+        }
+
+        // 데이터 가져오기 (파일 선택 및 로드)
+        function importData() {
+            const fileInput = document.getElementById('importFile');
+            fileInput.click();
+        }
+
+        // 파일 선택 시 데이터 로드
+        function handleFileImport(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedConsents = JSON.parse(e.target.result);
+                        if (Array.isArray(importedConsents)) {
+                            localStorage.setItem('freedivingConsents', JSON.stringify(importedConsents));
+                            alert('데이터가 성공적으로 가져와졌습니다!');
+                            loadAllConsents(); // 가져온 데이터로 페이지 새로고침
+                            updateStats(); // 통계 업데이트
+                        } else {
+                            alert('가져올 수 있는 형식의 JSON 파일이 아닙니다.');
+                        }
+                    } catch (error) {
+                        alert('데이터 가져오기에 실패했습니다. 파일 형식을 확인해주세요.');
+                        console.error('Import error:', error);
+                    }
+                };
+                reader.readAsText(file);
+            }
         }
     </script>
 </body>

@@ -99,8 +99,22 @@
             </div>
 
             <div class="form-actions">
-                <button type="submit" id="submitForm">동의서 제출</button>
-                <button type="button" id="downloadPDF">PDF 다운로드</button>
+                <button type="submit" id="submitForm" class="btn btn-primary">동의서 제출</button>
+                <button type="button" id="downloadPDF" class="btn btn-secondary">PDF 다운로드</button>
+                <button type="button" onclick="captureFormAndSendEmail()" class="btn btn-success" style="background: #28a745; color: white;">📧 이미지로 메일 전송</button>
+            </div>
+
+            <!-- 간단한 데이터 관리 섹션 -->
+            <div class="data-management" style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+                <h3 style="color: white; margin-bottom: 15px; text-align: center; font-size: 1.2rem;">📱 데이터 관리</h3>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+                    <button onclick="exportAllData()" class="btn btn-info" style="background: #17a2b8; min-width: 160px; padding: 15px 20px; font-size: 1rem; border: 2px solid white; color: white; font-weight: bold;">📤 모든 데이터 내보내기</button>
+                    <button onclick="importData()" class="btn btn-warning" style="background: #ffc107; color: #212529; min-width: 160px; padding: 15px 20px; font-size: 1rem; border: 2px solid white; font-weight: bold;">📥 데이터 가져오기</button>
+                    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="handleFileImport(event)">
+                </div>
+                <p style="font-size: 1rem; color: white; margin-top: 15px; text-align: center; font-weight: 500;">
+                    💡 다른 기기에서 작성한 데이터를 가져오려면 "데이터 가져오기"를 사용하세요.
+                </p>
             </div>
         </form>
     </div>
