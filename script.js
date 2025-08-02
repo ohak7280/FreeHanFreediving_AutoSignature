@@ -295,6 +295,14 @@ form.addEventListener('submit', async (e) => {
 // 이미지 캡처
 async function captureFormImage(formData) {
     try {
+        // 모바일에서는 이미지 캡처를 건너뛰고 기본 데이터만 저장
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            console.log('모바일 환경에서는 이미지 캡처를 건너뜁니다.');
+            return;
+        }
+
         // html2canvas가 로드될 때까지 대기
         if (typeof html2canvas === 'undefined') {
             await new Promise(resolve => {
