@@ -1,12 +1,4 @@
-// html2canvas 라이브러리 추가
-function loadHtml2Canvas() {
-    const script = document.createElement('script');
-    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
-    document.head.appendChild(script);
-}
 
-// 페이지 로드 시 html2canvas 로드
-loadHtml2Canvas();
 
 // 전자서명 관련 변수
 let isDrawing = false;
@@ -259,11 +251,11 @@ form.addEventListener('submit', async (e) => {
     try {
         console.log('동의서 제출 시작:', formData.name);
         
-        // 먼저 로컬 스토리지에 저장 (이미지 캡처 실패해도 데이터는 보존)
+        // 로컬 스토리지에 저장
         saveToLocalStorage(formData);
         
-        // 이미지 캡처 및 메일 전송
-        await captureAndSendEmail(formData);
+        // 이미지 캡처
+        await captureFormImage(formData);
         
         alert('동의서가 성공적으로 제출되었습니다!');
         
@@ -276,8 +268,8 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// 이미지 캡처 및 메일 전송
-async function captureAndSendEmail(formData) {
+// 이미지 캡처
+async function captureFormImage(formData) {
     try {
         // html2canvas가 로드될 때까지 대기
         if (typeof html2canvas === 'undefined') {
@@ -307,55 +299,15 @@ async function captureAndSendEmail(formData) {
         formData.capturedImage = imageData;
         
         // 로컬 스토리지에 업데이트된 데이터 저장 (이미지 포함)
-        saveToLocalStorage(formData);
-        
-        // 메일 전송
-        sendEmailWithImage(imageData, formData);
+        updateLocalStorageWithImage(formData);
         
     } catch (error) {
         console.error('이미지 캡처 실패:', error);
         // 이미지 캡처 실패해도 동의서 제출은 계속 진행
-        // 데이터는 이미 저장되어 있으므로 추가 저장 불필요
     }
 }
 
-// 메일로 이미지 전송
-function sendEmailWithImage(imageData, formData) {
-    const name = formData.name;
-    const contact = formData.contact;
-    const experienceDate = formData.experienceDate;
-    
-    const subject = `프리다이빙 체험 동의서 - ${name}`;
-    const body = `
-안녕하세요,
 
-${name}님의 프리다이빙 체험 동의서가 제출되었습니다.
-
-참가자 정보:
-- 이름: ${name}
-- 연락처: ${contact}
-- 체험일: ${experienceDate}
-- 제출시간: ${new Date().toLocaleString('ko-KR')}
-
-첨부된 이미지를 확인해주세요.
-
-감사합니다.
-    `.trim();
-
-    // 메일 링크 생성
-    const mailtoLink = `mailto:728chj728@naver.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    // 새 창에서 메일 클라이언트 열기
-    window.open(mailtoLink, '_blank');
-    
-    // 이미지 다운로드도 함께 제공 (관리자용)
-    const link = document.createElement('a');
-    link.href = imageData;
-    link.download = `freediving_consent_${name}_${new Date().toISOString().split('T')[0]}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
 
 // 폼 초기화
 function resetForm() {
@@ -378,16 +330,8 @@ function saveToLocalStorage(data) {
     try {
         const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
         
-        // 중복 체크 (같은 ID가 있는지 확인)
-        const existingIndex = existingData.findIndex(item => item.id === data.id);
-        
-        if (existingIndex !== -1) {
-            // 기존 데이터 업데이트 (이미지 캡처 후)
-            existingData[existingIndex] = data;
-        } else {
-            // 새로운 데이터 추가
-            existingData.push(data);
-        }
+        // 새로운 데이터 추가
+        existingData.push(data);
         
         localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
         console.log('데이터 저장 완료:', data.name, '총 개수:', existingData.length);
@@ -395,6 +339,25 @@ function saveToLocalStorage(data) {
     } catch (error) {
         console.error('로컬 스토리지 저장 실패:', error);
         throw error;
+    }
+}
+
+// 이미지 포함 데이터로 업데이트
+function updateLocalStorageWithImage(data) {
+    try {
+        const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+        
+        // 같은 ID의 데이터를 찾아서 이미지 포함 데이터로 업데이트
+        const existingIndex = existingData.findIndex(item => item.id === data.id);
+        
+        if (existingIndex !== -1) {
+            existingData[existingIndex] = data;
+            localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
+            console.log('이미지 포함 데이터 업데이트 완료:', data.name);
+        }
+        
+    } catch (error) {
+        console.error('이미지 업데이트 실패:', error);
     }
 }
 
