@@ -1,6 +1,18 @@
+// html2canvas 라이브러리 추가
+function loadHtml2Canvas() {
+    const script = document.createElement('script');
+    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
+    document.head.appendChild(script);
+}
+
+// 페이지 로드 시 html2canvas 로드
+loadHtml2Canvas();
+
 // 전자서명 관련 변수
 let isDrawing = false;
 let signatureData = null;
+let currentStep = 1;
+const totalSteps = 3;
 
 // DOM 요소들
 const canvas = document.getElementById('signatureCanvas');
@@ -9,7 +21,7 @@ const clearBtn = document.getElementById('clearSignature');
 const saveBtn = document.getElementById('saveSignature');
 const form = document.getElementById('consentForm');
 const submitBtn = document.getElementById('submitForm');
-const downloadBtn = document.getElementById('downloadPDF');
+const progressFill = document.getElementById('progressFill');
 
 // 캔버스 초기화
 function initCanvas() {
@@ -77,48 +89,163 @@ saveBtn.addEventListener('click', () => {
     alert('서명이 저장되었습니다.');
 });
 
-// 폼 제출 처리
-form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    // 모든 필수 체크박스 확인
-    const requiredCheckboxes = form.querySelectorAll('input[type="checkbox"][required]');
-    let allChecked = true;
-    
-    requiredCheckboxes.forEach(checkbox => {
-        if (!checkbox.checked) {
-            allChecked = false;
-        }
-    });
-    
-    if (!allChecked) {
-        alert('모든 동의 항목에 체크해주세요.');
+// 진행률 업데이트
+function updateProgress() {
+    const progress = (currentStep / totalSteps) * 100;
+    progressFill.style.width = progress + '%';
+}
+
+// 다음 단계로 이동
+function nextStep() {
+    if (!validateCurrentStep()) {
         return;
     }
     
-    // 필수 입력 필드 확인
+    if (currentStep < totalSteps) {
+        document.getElementById(`step${currentStep}`).style.display = 'none';
+        currentStep++;
+        document.getElementById(`step${currentStep}`).style.display = 'block';
+        updateProgress();
+    }
+}
+
+// 이전 단계로 이동
+function prevStep() {
+    if (currentStep > 1) {
+        document.getElementById(`step${currentStep}`).style.display = 'none';
+        currentStep--;
+        document.getElementById(`step${currentStep}`).style.display = 'block';
+        updateProgress();
+    }
+}
+
+// 현재 단계 유효성 검사
+function validateCurrentStep() {
+    clearErrors();
+    
+    switch (currentStep) {
+        case 1:
+            return validateStep1();
+        case 2:
+            return validateStep2();
+        case 3:
+            return validateStep3();
+        default:
+            return true;
+    }
+}
+
+// 1단계 유효성 검사 (참가자 정보)
+function validateStep1() {
+    let isValid = true;
+    
     const name = document.getElementById('name').value.trim();
     const contact = document.getElementById('contact').value.trim();
     const experienceDate = document.getElementById('experience-date').value;
     
-    if (!name || !contact || !experienceDate) {
-        alert('모든 필수 정보를 입력해주세요.');
-        return;
+    // 이름 검사
+    if (!name) {
+        showError('nameError', '이름을 입력해주세요.');
+        isValid = false;
+    } else if (name.length < 2) {
+        showError('nameError', '이름은 2글자 이상 입력해주세요.');
+        isValid = false;
     }
     
-    // 서명 확인
+    // 연락처 검사
+    if (!contact) {
+        showError('contactError', '연락처를 입력해주세요.');
+        isValid = false;
+    } else if (!/^[0-9-]+$/.test(contact)) {
+        showError('contactError', '올바른 연락처 형식을 입력해주세요.');
+        isValid = false;
+    }
+    
+    // 체험일 검사
+    if (!experienceDate) {
+        showError('dateError', '체험일을 선택해주세요.');
+        isValid = false;
+    } else {
+        const selectedDate = new Date(experienceDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            showError('dateError', '오늘 이후 날짜를 선택해주세요.');
+            isValid = false;
+        }
+    }
+    
+    return isValid;
+}
+
+// 2단계 유효성 검사 (동의 항목)
+function validateStep2() {
+    const checkboxes = [
+        'physical-contact',
+        'refund-policy', 
+        'guidance',
+        'media-consent'
+    ];
+    
+    for (let checkboxId of checkboxes) {
+        if (!document.getElementById(checkboxId).checked) {
+            alert('모든 동의 항목에 체크해주세요.');
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+// 3단계 유효성 검사 (서명)
+function validateStep3() {
     if (!signatureData) {
         alert('전자서명을 완료해주세요.');
+        return false;
+    }
+    
+    if (!document.getElementById('final-consent').checked) {
+        alert('최종 동의 항목에 체크해주세요.');
+        return false;
+    }
+    
+    return true;
+}
+
+// 에러 메시지 표시
+function showError(elementId, message) {
+    const errorElement = document.getElementById(elementId);
+    if (errorElement) {
+        errorElement.textContent = message;
+        errorElement.style.display = 'block';
+    }
+}
+
+// 에러 메시지 초기화
+function clearErrors() {
+    const errorElements = document.querySelectorAll('.error-message');
+    errorElements.forEach(element => {
+        element.textContent = '';
+        element.style.display = 'none';
+    });
+}
+
+// 폼 제출 처리
+form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    if (!validateCurrentStep()) {
         return;
     }
     
     // 데이터 수집
     const formData = {
-        id: `${name}_${experienceDate}_${Date.now()}`, // 고유 ID 생성
+        id: `${document.getElementById('name').value}_${document.getElementById('experience-date').value}_${Date.now()}`,
         timestamp: new Date().toISOString(),
-        name: name,
-        contact: contact,
-        experienceDate: experienceDate,
+        name: document.getElementById('name').value.trim(),
+        contact: document.getElementById('contact').value.trim(),
+        experienceDate: document.getElementById('experience-date').value,
         signature: signatureData,
         consent: {
             physicalContact: document.getElementById('physical-contact').checked,
@@ -130,18 +257,13 @@ form.addEventListener('submit', async (e) => {
     };
     
     try {
-        // 로컬 스토리지에 저장
-        saveToLocalStorage(formData);
-        
-        // JSON 파일로 다운로드
-        downloadJSON(formData);
+        // 이미지 캡처 및 메일 전송
+        await captureAndSendEmail(formData);
         
         alert('동의서가 성공적으로 제출되었습니다!');
         
         // 폼 초기화
-        form.reset();
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        signatureData = null;
+        resetForm();
         
     } catch (error) {
         console.error('Error saving data:', error);
@@ -149,87 +271,130 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
+// 이미지 캡처 및 메일 전송
+async function captureAndSendEmail(formData) {
+    try {
+        // html2canvas가 로드될 때까지 대기
+        if (typeof html2canvas === 'undefined') {
+            await new Promise(resolve => {
+                const checkInterval = setInterval(() => {
+                    if (typeof html2canvas !== 'undefined') {
+                        clearInterval(checkInterval);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
+
+        // 폼 영역 캡처
+        const formElement = document.getElementById('consentForm');
+        const canvas = await html2canvas(formElement, {
+            scale: 2, // 고해상도
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff'
+        });
+
+        // 캔버스를 이미지로 변환
+        const imageData = canvas.toDataURL('image/png');
+        
+        // 캡처된 이미지를 formData에 저장
+        formData.capturedImage = imageData;
+        
+        // 로컬 스토리지에 업데이트된 데이터 저장
+        saveToLocalStorage(formData);
+        
+        // 메일 전송
+        sendEmailWithImage(imageData, formData);
+        
+    } catch (error) {
+        console.error('이미지 캡처 실패:', error);
+        // 이미지 캡처 실패해도 동의서 제출은 계속 진행
+    }
+}
+
+// 메일로 이미지 전송
+function sendEmailWithImage(imageData, formData) {
+    const name = formData.name;
+    const contact = formData.contact;
+    const experienceDate = formData.experienceDate;
+    
+    const subject = `프리다이빙 체험 동의서 - ${name}`;
+    const body = `
+안녕하세요,
+
+${name}님의 프리다이빙 체험 동의서가 제출되었습니다.
+
+참가자 정보:
+- 이름: ${name}
+- 연락처: ${contact}
+- 체험일: ${experienceDate}
+- 제출시간: ${new Date().toLocaleString('ko-KR')}
+
+첨부된 이미지를 확인해주세요.
+
+감사합니다.
+    `.trim();
+
+    // 메일 링크 생성
+    const mailtoLink = `mailto:728chj728@naver.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    
+    // 새 창에서 메일 클라이언트 열기
+    window.open(mailtoLink, '_blank');
+    
+    // 이미지 다운로드도 함께 제공 (관리자용)
+    const link = document.createElement('a');
+    link.href = imageData;
+    link.download = `freediving_consent_${name}_${new Date().toISOString().split('T')[0]}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// 폼 초기화
+function resetForm() {
+    form.reset();
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    signatureData = null;
+    currentStep = 1;
+    updateProgress();
+    
+    // 모든 단계 숨기고 1단계만 표시
+    for (let i = 1; i <= totalSteps; i++) {
+        document.getElementById(`step${i}`).style.display = i === 1 ? 'block' : 'none';
+    }
+    
+    clearErrors();
+}
+
 // 로컬 스토리지에 저장
 function saveToLocalStorage(data) {
     const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
     existingData.push(data);
     localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
-    
-    // 서버에도 저장 시도 (선택사항)
-    saveToServer(data);
 }
-
-// 서버에 저장 (선택사항)
-async function saveToServer(data) {
-    try {
-        // 여기에 실제 서버 엔드포인트를 추가할 수 있습니다
-        // 예: fetch('/api/consents', {
-        //     method: 'POST',
-        //     headers: { 'Content-Type': 'application/json' },
-        //     body: JSON.stringify(data)
-        // });
-        
-        console.log('서버 저장 시도:', data);
-    } catch (error) {
-        console.log('서버 저장 실패 (로컬 스토리지만 사용):', error);
-    }
-}
-
-// JSON 파일 다운로드
-function downloadJSON(data) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `freediving_consent_${data.name}_${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-}
-
-// PDF 다운로드 기능
-downloadBtn.addEventListener('click', () => {
-    // jsPDF 라이브러리가 필요하지만, 여기서는 간단한 구현
-    alert('PDF 다운로드 기능은 jsPDF 라이브러리 설치가 필요합니다.');
-});
-
-// html2canvas 라이브러리 추가
-function loadHtml2Canvas() {
-    const script = document.createElement('script');
-    script.src = 'https://html2canvas.hertzen.com/dist/html2canvas.min.js';
-    document.head.appendChild(script);
-}
-
-// 페이지 로드 시 html2canvas 로드
-loadHtml2Canvas();
 
 // 페이지 로드 시 초기화
 document.addEventListener('DOMContentLoaded', () => {
     initCanvas();
+    updateProgress();
     
-    // 오늘 날짜를 기본값으로 설정
+    // 오늘 날짜를 최소값으로 설정
     const today = new Date().toISOString().split('T')[0];
-    document.getElementById('experience-date').value = today;
+    const dateInput = document.getElementById('experience-date');
+    dateInput.min = today;
+    dateInput.value = today;
     
-    // 입력 필드 유효성 검사
+    // 입력 필드 실시간 유효성 검사
     const inputs = form.querySelectorAll('input[required]');
     inputs.forEach(input => {
-        input.addEventListener('blur', validateField);
+        input.addEventListener('blur', () => {
+            if (currentStep === 1) {
+                validateStep1();
+            }
+        });
     });
 });
-
-// 필드 유효성 검사
-function validateField(e) {
-    const field = e.target;
-    const value = field.value.trim();
-    
-    if (!value && field.hasAttribute('required')) {
-        field.style.borderColor = '#dc3545';
-    } else {
-        field.style.borderColor = '#e9ecef';
-    }
-}
 
 // 데이터 조회 기능 (관리자용)
 function viewAllConsents() {
@@ -253,11 +418,6 @@ function findConsentsByDate(date) {
         consent.experienceDate === date
     );
 }
-
-// 전역 함수로 노출 (개발자 도구에서 사용 가능)
-window.viewAllConsents = viewAllConsents;
-window.findConsentByName = findConsentByName;
-window.findConsentsByDate = findConsentsByDate;
 
 // 모든 데이터 내보내기
 function exportAllData() {
@@ -324,85 +484,11 @@ function handleFileImport(event) {
 }
 
 // 전역 함수로 노출
+window.viewAllConsents = viewAllConsents;
+window.findConsentByName = findConsentByName;
+window.findConsentsByDate = findConsentsByDate;
 window.exportAllData = exportAllData;
 window.importData = importData;
-window.handleFileImport = handleFileImport; 
-
-// 폼을 이미지로 변환하고 메일 전송
-async function captureFormAndSendEmail() {
-    try {
-        // html2canvas가 로드될 때까지 대기
-        if (typeof html2canvas === 'undefined') {
-            await new Promise(resolve => {
-                const checkInterval = setInterval(() => {
-                    if (typeof html2canvas !== 'undefined') {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-
-        // 폼 영역 캡처
-        const formElement = document.getElementById('consentForm');
-        const canvas = await html2canvas(formElement, {
-            scale: 2, // 고해상도
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-        });
-
-        // 캔버스를 이미지로 변환
-        const imageData = canvas.toDataURL('image/png');
-        
-        // 메일 전송
-        sendEmailWithImage(imageData);
-        
-    } catch (error) {
-        console.error('이미지 캡처 실패:', error);
-        alert('이미지 캡처 중 오류가 발생했습니다.');
-    }
-}
-
-// 메일로 이미지 전송
-function sendEmailWithImage(imageData) {
-    const name = document.getElementById('name').value || '참가자';
-    const contact = document.getElementById('contact').value || '연락처 없음';
-    const experienceDate = document.getElementById('experience-date').value || '날짜 없음';
-    
-    const subject = `프리다이빙 체험 동의서 - ${name}`;
-    const body = `
-안녕하세요,
-
-${name}님의 프리다이빙 체험 동의서가 제출되었습니다.
-
-참가자 정보:
-- 이름: ${name}
-- 연락처: ${contact}
-- 체험일: ${experienceDate}
-- 제출시간: ${new Date().toLocaleString('ko-KR')}
-
-첨부된 이미지를 확인해주세요.
-
-감사합니다.
-    `.trim();
-
-    // 메일 링크 생성
-    const mailtoLink = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    
-    // 새 창에서 메일 클라이언트 열기
-    window.open(mailtoLink, '_blank');
-    
-    // 이미지 다운로드도 함께 제공
-    const link = document.createElement('a');
-    link.href = imageData;
-    link.download = `freediving_consent_${name}_${new Date().toISOString().split('T')[0]}.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    alert('동의서가 이미지로 저장되었고, 메일 클라이언트가 열렸습니다. 메일에 이미지를 첨부하여 전송하세요.');
-}
-
-// 전역 함수로 노출
-window.captureFormAndSendEmail = captureFormAndSendEmail; 
+window.handleFileImport = handleFileImport;
+window.nextStep = nextStep;
+window.prevStep = prevStep; 

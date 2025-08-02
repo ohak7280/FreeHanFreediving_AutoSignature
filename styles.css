@@ -1,3 +1,4 @@
+/* 기본 스타일 */
 * {
     margin: 0;
     padding: 0;
@@ -5,12 +6,10 @@
 }
 
 body {
-    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    line-height: 1.6;
-    color: #333;
+    font-family: 'Noto Sans KR', sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
-    padding: 20px;
+    padding: 20px 0;
 }
 
 .container {
@@ -18,10 +17,11 @@ body {
     margin: 0 auto;
     background: white;
     border-radius: 20px;
-    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
     overflow: hidden;
 }
 
+/* 헤더 */
 header {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
@@ -36,49 +36,117 @@ header h1 {
 }
 
 .subtitle {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     opacity: 0.9;
 }
 
-#consentForm {
-    padding: 40px 30px;
+/* 진행률 바 */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background: #e9ecef;
+    position: relative;
 }
 
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    width: 33.33%;
+    transition: width 0.3s ease;
+}
+
+/* 단계별 폼 */
+.step {
+    padding: 30px;
+}
+
+.step h2 {
+    color: #667eea;
+    margin-bottom: 30px;
+    font-size: 1.8rem;
+    text-align: center;
+}
+
+/* 폼 그룹 */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 15px;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-group small {
+    display: block;
+    margin-top: 5px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* 에러 메시지 */
+.error-message {
+    color: #dc3545;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: none;
+}
+
+/* 동의 섹션 */
 .consent-section {
-    margin-bottom: 40px;
-    padding: 25px;
     background: #f8f9fa;
+    padding: 25px;
     border-radius: 15px;
-    border-left: 5px solid #667eea;
+    margin-bottom: 25px;
+    border-left: 4px solid #667eea;
 }
 
-.consent-section h2 {
+.consent-section h3 {
     color: #667eea;
     margin-bottom: 15px;
     font-size: 1.3rem;
-    font-weight: 600;
 }
 
 .consent-section p {
     margin-bottom: 15px;
+    line-height: 1.6;
     color: #555;
 }
 
 .consent-section ul {
-    margin: 15px 0;
+    margin-bottom: 15px;
     padding-left: 20px;
 }
 
 .consent-section li {
     margin-bottom: 8px;
+    line-height: 1.5;
     color: #555;
 }
 
+/* 체크박스 그룹 */
 .checkbox-group {
-    margin-top: 20px;
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-top: 15px;
 }
 
 .checkbox-group input[type="checkbox"] {
@@ -93,157 +161,132 @@ header h1 {
     cursor: pointer;
 }
 
-.participant-info {
-    margin-bottom: 40px;
-    padding: 25px;
-    background: #f8f9fa;
-    border-radius: 15px;
-    border-left: 5px solid #28a745;
-}
-
-.participant-info h2 {
-    color: #28a745;
-    margin-bottom: 20px;
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-.form-group {
-    margin-bottom: 20px;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 12px 15px;
-    border: 2px solid #e9ecef;
-    border-radius: 8px;
-    font-size: 1rem;
-    transition: border-color 0.3s ease;
-}
-
-.form-group input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-}
-
+/* 서명 섹션 */
 .signature-section {
-    margin-bottom: 40px;
-    padding: 25px;
     background: #f8f9fa;
+    padding: 25px;
     border-radius: 15px;
-    border-left: 5px solid #dc3545;
-}
-
-.signature-section h2 {
-    color: #dc3545;
-    margin-bottom: 15px;
-    font-size: 1.3rem;
-    font-weight: 600;
-}
-
-.signature-section p {
-    margin-bottom: 20px;
-    color: #555;
-    font-weight: 500;
+    margin-bottom: 25px;
 }
 
 .signature-area {
-    margin-bottom: 20px;
+    margin: 20px 0;
 }
 
-#signatureCanvas {
+.signature-area canvas {
+    width: 100%;
+    height: 200px;
     border: 2px solid #e9ecef;
-    border-radius: 8px;
+    border-radius: 10px;
     background: white;
     cursor: crosshair;
-    display: block;
-    margin-bottom: 15px;
 }
 
 .signature-controls {
     display: flex;
     gap: 10px;
-    flex-wrap: wrap;
-}
-
-.signature-controls button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 6px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-#clearSignature {
-    background: #6c757d;
-    color: white;
-}
-
-#clearSignature:hover {
-    background: #5a6268;
-}
-
-#saveSignature {
-    background: #28a745;
-    color: white;
-}
-
-#saveSignature:hover {
-    background: #218838;
-}
-
-.form-actions {
-    display: flex;
-    gap: 15px;
+    margin-top: 15px;
     justify-content: center;
-    flex-wrap: wrap;
 }
 
-.form-actions button {
+/* 버튼 스타일 */
+.btn {
     padding: 15px 30px;
     border: none;
-    border-radius: 8px;
-    font-size: 1.1rem;
+    border-radius: 25px;
+    font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
-    min-width: 150px;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
 }
 
-#submitForm {
+.btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
 }
 
-#submitForm:hover {
+.btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
 }
 
-#downloadPDF {
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+}
+
+.btn-success {
     background: #28a745;
     color: white;
 }
 
-#downloadPDF:hover {
+.btn-success:hover {
     background: #218838;
     transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
 }
 
-/* 반응형 디자인 */
+.btn-info {
+    background: #17a2b8;
+    color: white;
+}
+
+.btn-info:hover {
+    background: #138496;
+    transform: translateY(-2px);
+}
+
+/* 단계 액션 버튼 */
+.step-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 30px;
+    flex-wrap: wrap;
+}
+
+/* 데이터 관리 섹션 */
+.data-management {
+    margin-top: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+}
+
+.data-management h3 {
+    color: white;
+    margin-bottom: 15px;
+    text-align: center;
+    font-size: 1.2rem;
+}
+
+.data-management > div {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.data-management p {
+    font-size: 1rem;
+    color: white;
+    margin-top: 15px;
+    text-align: center;
+    font-weight: 500;
+}
+
+/* 모바일 반응형 디자인 */
 @media (max-width: 768px) {
     .container {
-        margin: 10px;
+        margin: 0 10px;
         border-radius: 15px;
     }
     
@@ -255,33 +298,93 @@ header h1 {
         font-size: 2rem;
     }
     
-    #consentForm {
-        padding: 30px 20px;
-    }
-    
-    .consent-section,
-    .participant-info,
-    .signature-section {
+    .step {
         padding: 20px;
     }
     
-    #signatureCanvas {
-        width: 100%;
-        height: 150px;
+    .step h2 {
+        font-size: 1.5rem;
     }
     
-    .form-actions {
+    .consent-section {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .consent-section h3 {
+        font-size: 1.2rem;
+    }
+    
+    .form-group input {
+        padding: 12px;
+        font-size: 16px; /* 모바일에서 줌 방지 */
+    }
+    
+    .btn {
+        padding: 12px 25px;
+        font-size: 0.9rem;
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    
+    .step-actions {
         flex-direction: column;
-        align-items: center;
+        gap: 10px;
     }
     
-    .form-actions button {
+    .signature-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .signature-controls .btn {
         width: 100%;
-        max-width: 300px;
+    }
+    
+    .data-management > div {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .data-management .btn {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+/* 작은 화면 (모바일 세로) */
+@media (max-width: 480px) {
+    .container {
+        margin: 0 5px;
+    }
+    
+    header {
+        padding: 25px 15px;
+    }
+    
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .step {
+        padding: 15px;
+    }
+    
+    .consent-section {
+        padding: 15px;
+    }
+    
+    .btn {
+        padding: 10px 20px;
+        font-size: 0.85rem;
     }
 }
 
 /* 애니메이션 */
+.step {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -293,109 +396,18 @@ header h1 {
     }
 }
 
-.consent-section,
-.participant-info,
-.signature-section {
-    animation: fadeIn 0.6s ease-out;
+/* 포커스 스타일 */
+.form-group input:focus,
+.checkbox-group input:focus + label {
+    outline: none;
 }
 
-/* 성공 메시지 스타일 */
-.success-message {
-    background: #d4edda;
-    color: #155724;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #c3e6cb;
-    display: none;
-}
-
-/* 에러 메시지 스타일 */
-.error-message {
-    background: #f8d7da;
-    color: #721c24;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border: 1px solid #f5c6cb;
-    display: none;
-} 
-
-/* 모바일 반응형 디자인 */
-@media (max-width: 768px) {
-    .container {
-        padding: 10px;
-    }
-    
-    .consent-section {
-        margin-bottom: 20px;
-        padding: 15px;
-    }
-    
-    .signature-area canvas {
-        width: 100% !important;
-        height: 150px !important;
-    }
-    
-    .form-actions {
-        flex-direction: column;
-        gap: 10px;
-    }
-    
-    .form-actions button {
-        width: 100%;
-        padding: 15px;
-        font-size: 1rem;
-    }
-    
-    /* 데이터 관리 섹션 모바일 최적화 - 더 강력하게 */
-    .data-management {
-        margin-top: 20px !important;
-        padding: 20px !important;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        border-radius: 15px !important;
-        color: white !important;
-        position: relative !important;
-        z-index: 100 !important;
-        box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
-    }
-    
-    .data-management h3 {
-        font-size: 1.3rem !important;
-        margin-bottom: 15px !important;
-        color: white !important;
-        text-align: center !important;
-    }
-    
-    .data-management > div {
-        flex-direction: column !important;
-        gap: 12px !important;
-        justify-content: center !important;
-    }
-    
-    .data-management button {
-        width: 100% !important;
-        padding: 18px 20px !important;
-        font-size: 1.1rem !important;
-        min-width: auto !important;
-        border: 2px solid white !important;
-        font-weight: bold !important;
-        border-radius: 10px !important;
-        margin: 0 !important;
-    }
-    
-    .data-management p {
-        font-size: 1rem !important;
-        margin-top: 15px !important;
-        color: white !important;
-        font-weight: 500 !important;
-        text-align: center !important;
-    }
-    
-    /* 스크롤 시에도 보이도록 고정 */
-    .data-management {
-        position: sticky !important;
-        bottom: 10px !important;
-        margin-bottom: 20px !important;
+/* 접근성 개선 */
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .progress-fill,
+    .step {
+        transition: none;
+        animation: none;
     }
 } 
