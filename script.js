@@ -11,8 +11,14 @@ const firebaseConfig = {
 };
 
 // Firebase 초기화
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+let db;
+try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    console.log('Firebase 초기화 성공');
+} catch (error) {
+    console.error('Firebase 초기화 실패:', error);
+}
 
 // 전자서명 관련 변수
 let isDrawing = false;
@@ -291,46 +297,12 @@ form.addEventListener('submit', async (e) => {
     }
 });
 
-// 이미지 캡처
+// 이미지 캡처 (모든 환경에서 건너뛰기)
 async function captureFormImage(formData) {
     try {
-        // 모바일에서는 이미지 캡처를 건너뛰고 기본 데이터만 저장
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        if (isMobile) {
-            console.log('모바일 환경에서는 이미지 캡처를 건너뜁니다.');
-            return;
-        }
-
-        // html2canvas가 로드될 때까지 대기
-        if (typeof html2canvas === 'undefined') {
-            await new Promise(resolve => {
-                const checkInterval = setInterval(() => {
-                    if (typeof html2canvas !== 'undefined') {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }
-                }, 100);
-            });
-        }
-
-        // 폼 영역 캡처
-        const formElement = document.getElementById('consentForm');
-        const canvas = await html2canvas(formElement, {
-            scale: 2, // 고해상도
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
-        });
-
-        // 캔버스를 이미지로 변환
-        const imageData = canvas.toDataURL('image/png');
-        
-        // 캡처된 이미지를 formData에 저장
-        formData.capturedImage = imageData;
-        
-        // 로컬 스토리지에 업데이트된 데이터 저장 (이미지 포함)
-        updateLocalStorageWithImage(formData);
+        // 모든 환경에서 이미지 캡처를 건너뛰고 기본 데이터만 저장
+        console.log('이미지 캡처를 건너뜁니다.');
+        return;
         
     } catch (error) {
         console.error('이미지 캡처 실패:', error);
@@ -359,6 +331,13 @@ function resetForm() {
 // Firebase에 데이터 저장
 async function saveToFirebase(data) {
     try {
+        // Firebase 연결 확인
+        if (!db) {
+            throw new Error('Firebase가 초기화되지 않았습니다.');
+        }
+        
+        console.log('Firebase 저장 시작:', data.name);
+        
         // Firestore에 데이터 저장
         const docRef = await db.collection('consents').add({
             ...data,
@@ -370,6 +349,15 @@ async function saveToFirebase(data) {
         
     } catch (error) {
         console.error('Firebase 저장 실패:', error);
+        // Firebase 저장 실패 시 로컬 스토리지에 백업 저장
+        try {
+            const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+            existingData.push(data);
+            localStorage.setItem('freedivingConsents', JSON.stringify(existingData));
+            console.log('로컬 스토리지 백업 저장 완료:', data.name);
+        } catch (backupError) {
+            console.error('백업 저장도 실패:', backupError);
+        }
         throw error;
     }
 }
