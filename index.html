@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>프리다이빙 체험 동의서</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>교육전 사전 동의서</h1>
+            <p class="subtitle">프리다이빙 체험 참가자 동의서</p>
+        </header>
+
+        <form id="consentForm">
+            <div class="consent-section">
+                <h2>1. 신체접촉, 성추행 관련 동의</h2>
+                <p>체험 중 불가피한 신체접촉이 발생할 수 있습니다. 불편함이나 거부감을 느낄 경우 명확하게 표현해주세요. <strong>예시:</strong> "강사님, 스트로크 훈련 중 손목을 잡으실 때 성적으로 불편합니다. 하지 말아주세요!!"</p>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="physical-contact" required>
+                    <label for="physical-contact">위 내용을 이해하고 동의합니다.</label>
+                </div>
+            </div>
+
+            <div class="consent-section">
+                <h2>2. 환불규정</h2>
+                <ul>
+                    <li>체험 시작 후 환불 불가 (재료 제공, 이론 수업, 풀 수업 포함)</li>
+                    <li>체험 전 취소 시: 5일 전 100% 환불, 3-4일 전 50% 환불, 2일 이하 환불 불가</li>
+                </ul>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="refund-policy" required>
+                    <label for="refund-policy">환불규정을 이해하고 동의합니다.</label>
+                </div>
+            </div>
+
+            <div class="consent-section">
+                <h2>3. 안내 사항</h2>
+                <ul>
+                    <li>체험 시간: 1.5-2시간 (입장 준비 시간 포함), 시간 미달 시 환불 불가</li>
+                    <li><strong>지각 시 체험 시간이 단축되며, 지각 시간만큼 체험 시간이 줄어듭니다</strong></li>
+                    <li><strong>정시 도착을 권장하며, 지각으로 인한 불이익은 참가자 본인이 부담합니다</strong></li>
+                    <li>추가 체험: 시간당 30,000원 (10분 추가도 1시간으로 계산)</li>
+                    <li>최대 4명까지 동시 입장 가능</li>
+                    <li>강사 지시사항 완전 준수 필수</li>
+                    <li>위험행위 시 3회 경고 후 강제 퇴장</li>
+                    <li>웻슈트 착용 필수</li>
+                </ul>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="guidance" required>
+                    <label for="guidance">안내 사항을 이해하고 동의합니다.</label>
+                </div>
+            </div>
+
+            <div class="consent-section">
+                <h2>4. 수중 촬영물</h2>
+                <ul>
+                    <li>모든 영상 및 사진은 "프리한프리다이빙" 소유</li>
+                    <li>SNS 업로드 가능 (단체사진 제외 요청 시 거부 가능)</li>
+                    <li>인스타그램 업로드 시 해시태그 필수: #프리한프리다이빙 #양양바다</li>
+                </ul>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="media-consent" required>
+                    <label for="media-consent">수중 촬영물 관련 사항을 이해하고 동의합니다.</label>
+                </div>
+            </div>
+
+            <div class="participant-info">
+                <h2>참가자 정보</h2>
+                <div class="form-group">
+                    <label for="name">이름 *</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="contact">연락처 *</label>
+                    <input type="tel" id="contact" name="contact" required>
+                </div>
+                <div class="form-group">
+                    <label for="experience-date">체험일 *</label>
+                    <input type="date" id="experience-date" name="experience-date" required>
+                </div>
+            </div>
+
+            <div class="signature-section">
+                <h2>전자서명</h2>
+                <p>상기 본인은 위의 내용을 충분한 시간동안 정확하게 설명을 듣고 인지하였으며, 모든내용에 동의 합니다.</p>
+                <div class="signature-area">
+                    <canvas id="signatureCanvas" width="400" height="200"></canvas>
+                    <div class="signature-controls">
+                        <button type="button" id="clearSignature">서명 지우기</button>
+                        <button type="button" id="saveSignature">서명 저장</button>
+                    </div>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="final-consent" required>
+                    <label for="final-consent">모든 내용에 동의하며 전자서명을 통해 확인합니다.</label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" id="submitForm">동의서 제출</button>
+                <button type="button" id="downloadPDF">PDF 다운로드</button>
+            </div>
+        </form>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 
