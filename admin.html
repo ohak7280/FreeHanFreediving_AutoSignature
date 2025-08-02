@@ -434,11 +434,34 @@
                 
                 console.log('Firebase에서 데이터 로드 시작');
                 const snapshot = await db.collection('consents').orderBy('createdAt', 'desc').get();
-                allConsents = snapshot.docs.map(doc => ({
+                const firebaseData = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
-                console.log('Firebase에서 로드된 데이터 개수:', allConsents.length);
+                
+                // 로컬 스토리지 데이터와 병합하여 중복 제거
+                const localData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+                console.log('Firebase에서 로드된 데이터 개수:', firebaseData.length);
+                console.log('로컬 스토리지에서 로드된 데이터 개수:', localData.length);
+                
+                // Firebase 데이터를 우선으로 하고, 로컬 데이터는 Firebase에 없는 것만 추가
+                const mergedData = [...firebaseData];
+                
+                localData.forEach(localItem => {
+                    const existsInFirebase = firebaseData.some(firebaseItem => 
+                        firebaseItem.id === localItem.id || 
+                        (firebaseItem.name === localItem.name && 
+                         firebaseItem.experienceDate === localItem.experienceDate && 
+                         firebaseItem.timestamp === localItem.timestamp)
+                    );
+                    
+                    if (!existsInFirebase) {
+                        mergedData.push(localItem);
+                    }
+                });
+                
+                allConsents = mergedData;
+                console.log('최종 병합된 데이터 개수:', allConsents.length);
                 displayConsents(allConsents);
                 updateStats();
             } catch (error) {
@@ -583,7 +606,7 @@
                 try {
                     console.log('삭제 시작:', consent);
                     
-                    // 1. Firebase에서 삭제
+                    // 1. Firebase에서 삭제 (Firebase ID가 있는 경우)
                     if (db && consent.id) {
                         try {
                             await db.collection('consents').doc(consent.id).delete();
@@ -598,11 +621,20 @@
                         const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
                         console.log('삭제 전 로컬 데이터 개수:', existingData.length);
                         
-                        // 정확한 매칭으로 삭제
+                        // 정확한 매칭으로 삭제 (Firebase ID가 있으면 ID로, 없으면 다른 필드로)
                         const updatedData = existingData.filter(item => {
-                            const isMatch = item.name === consent.name && 
-                                          item.experienceDate === consent.experienceDate && 
-                                          item.timestamp === consent.timestamp;
+                            let isMatch = false;
+                            
+                            if (consent.id && item.id) {
+                                // Firebase ID가 있는 경우 ID로 매칭
+                                isMatch = item.id === consent.id;
+                            } else {
+                                // Firebase ID가 없는 경우 다른 필드로 매칭
+                                isMatch = item.name === consent.name && 
+                                         item.experienceDate === consent.experienceDate && 
+                                         item.timestamp === consent.timestamp;
+                            }
+                            
                             if (isMatch) {
                                 console.log('삭제할 항목 발견:', item);
                             }
@@ -616,11 +648,11 @@
                         console.error('로컬 스토리지 삭제 실패:', localError);
                     }
                     
-                    // 3. 배열에서도 삭제
+                    // 3. 현재 배열에서 삭제
                     allConsents.splice(index, 1);
                     console.log('배열에서 삭제 완료, 남은 개수:', allConsents.length);
                     
-                    // 4. 화면 새로고침
+                    // 4. 화면 즉시 업데이트
                     displayConsents(allConsents);
                     updateStats();
                     
