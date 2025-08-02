@@ -407,8 +407,14 @@
         };
 
         // Firebase 초기화
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        let db;
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log('Firebase 초기화 성공 (관리자 페이지)');
+        } catch (error) {
+            console.error('Firebase 초기화 실패 (관리자 페이지):', error);
+        }
 
         let allConsents = [];
 
@@ -421,16 +427,32 @@
         // Firebase에서 모든 동의서 로드
         async function loadAllConsents() {
             try {
+                // Firebase 연결 확인
+                if (!db) {
+                    throw new Error('Firebase가 초기화되지 않았습니다.');
+                }
+                
+                console.log('Firebase에서 데이터 로드 시작');
                 const snapshot = await db.collection('consents').orderBy('createdAt', 'desc').get();
                 allConsents = snapshot.docs.map(doc => ({
                     id: doc.id,
                     ...doc.data()
                 }));
+                console.log('Firebase에서 로드된 데이터 개수:', allConsents.length);
                 displayConsents(allConsents);
                 updateStats();
             } catch (error) {
                 console.error('Firebase 데이터 로드 실패:', error);
-                alert('데이터를 불러오는데 실패했습니다.');
+                // Firebase 실패 시 로컬 스토리지에서 로드
+                try {
+                    allConsents = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+                    console.log('로컬 스토리지에서 로드된 데이터 개수:', allConsents.length);
+                    displayConsents(allConsents);
+                    updateStats();
+                } catch (localError) {
+                    console.error('로컬 스토리지 로드도 실패:', localError);
+                    alert('데이터를 불러오는데 실패했습니다.');
+                }
             }
         }
 
@@ -559,8 +581,25 @@
             
             if (confirm(`"${consentName}"님의 ${consentDate} 체험 동의서를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`)) {
                 try {
-                    // Firebase에서 문서 삭제
-                    await db.collection('consents').doc(consent.id).delete();
+                    // Firebase에서 문서 삭제 시도
+                    if (db && consent.id) {
+                        await db.collection('consents').doc(consent.id).delete();
+                        console.log('Firebase에서 삭제 완료:', consent.id);
+                    }
+                    
+                    // 로컬 스토리지에서도 삭제
+                    try {
+                        const existingData = JSON.parse(localStorage.getItem('freedivingConsents') || '[]');
+                        const updatedData = existingData.filter(item => 
+                            !(item.name === consent.name && 
+                              item.experienceDate === consent.experienceDate && 
+                              item.timestamp === consent.timestamp)
+                        );
+                        localStorage.setItem('freedivingConsents', JSON.stringify(updatedData));
+                        console.log('로컬 스토리지에서 삭제 완료');
+                    } catch (localError) {
+                        console.error('로컬 스토리지 삭제 실패:', localError);
+                    }
                     
                     // 화면 새로고침
                     loadAllConsents();
