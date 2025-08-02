@@ -460,8 +460,11 @@
                     }
                 });
                 
-                allConsents = mergedData;
-                console.log('최종 병합된 데이터 개수:', allConsents.length);
+                // 삭제된 항목 필터링
+                const filteredData = mergedData.filter(item => !isDeletedItem(item));
+                allConsents = filteredData;
+                console.log('최종 병합된 데이터 개수:', mergedData.length);
+                console.log('삭제된 항목 필터링 후 개수:', allConsents.length);
                 displayConsents(allConsents);
                 updateStats();
             } catch (error) {
@@ -477,6 +480,22 @@
                     alert('데이터를 불러오는데 실패했습니다.');
                 }
             }
+        }
+
+        // 삭제된 항목을 추적하는 배열
+        let deletedItems = JSON.parse(localStorage.getItem('deletedItems') || '[]');
+
+        // 삭제된 항목인지 확인하는 함수
+        function isDeletedItem(item) {
+            return deletedItems.some(deleted => {
+                if (item.id && deleted.id) {
+                    return item.id === deleted.id;
+                } else {
+                    return item.name === deleted.name && 
+                           item.experienceDate === deleted.experienceDate && 
+                           item.timestamp === deleted.timestamp;
+                }
+            });
         }
 
         // 동의서 검색
@@ -648,11 +667,21 @@
                         console.error('로컬 스토리지 삭제 실패:', localError);
                     }
                     
-                    // 3. 현재 배열에서 삭제
+                    // 3. 삭제된 항목 추적에 추가
+                    deletedItems.push({
+                        id: consent.id,
+                        name: consent.name,
+                        experienceDate: consent.experienceDate,
+                        timestamp: consent.timestamp
+                    });
+                    localStorage.setItem('deletedItems', JSON.stringify(deletedItems));
+                    console.log('삭제된 항목 추적에 추가 완료');
+                    
+                    // 4. 현재 배열에서 삭제
                     allConsents.splice(index, 1);
                     console.log('배열에서 삭제 완료, 남은 개수:', allConsents.length);
                     
-                    // 4. 화면 즉시 업데이트
+                    // 5. 화면 즉시 업데이트
                     displayConsents(allConsents);
                     updateStats();
                     
